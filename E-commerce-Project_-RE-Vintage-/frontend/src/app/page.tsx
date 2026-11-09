@@ -12,35 +12,13 @@ const GRADES = [
   ["Fair", "Plays through. Heavy wear."],
 ];
 
-const NAV = ["Records", "Apparel", "Turntables", "Shops"];
-
 export default function Home() {
   return (
     <main className="overflow-x-hidden">
-      {/* NAV */}
-      <header className="flex items-center justify-between px-6 py-5 md:px-12">
-        <a
-          href="#"
-          className="clip-slash-both inline-block bg-vinylBlack px-6 py-1 font-display text-3xl italic text-parchment transition-colors hover:bg-amberGlow hover:text-vinylBlack"
-        >
-          RE—VINTAGE
-        </a>
-        <nav className="hidden gap-2 md:flex">
-          {NAV.map((item) => (
-            <a
-              key={item}
-              href="#crate"
-              className="hover-tilt-2 inline-block px-3 py-1 font-mono text-sm uppercase tracking-widest transition-colors hover:bg-amberGlow"
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-      </header>
 
       {/* HERO */}
-      <section className="grid items-center gap-12 px-6 pb-20 pt-8 md:grid-cols-2 md:px-12">
-        <div>
+      <section className="px-6 pb-16 pt-8 md:px-12">
+        <div className="relative z-10 max-w-xl">
           <p className="mb-4 font-mono text-xs uppercase tracking-[0.3em] text-pine">
             Analogue · Vintage · Independent
           </p>
@@ -76,13 +54,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="relative mx-auto">
-          <VinylRecord size={340} label="RE—VINTAGE" catalog="VNL-0001" />
-          <span className="absolute -left-4 top-2 animate-p5-pop bg-vinylBlack px-3 py-1 font-mono text-xs font-bold uppercase text-amberGlow">
-            ✓ Verified shop
-          </span>
-        </div>
-      </section>
+        </section>
 
       {/* CRATE */}
       <section id="crate" className="bg-pine/15 px-6 py-16 md:px-12">

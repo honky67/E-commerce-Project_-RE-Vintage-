@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import SiteHeader from "../components/SiteHeader";
 
 // template.tsx re-mounts on every navigation, so these play on each page change.
 export default function Template({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3, duration: 0.35 }}
       >
+        <SiteHeader />
         {children}
       </motion.div>
     </>

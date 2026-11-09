@@ -9,6 +9,8 @@ export interface Vendor {
   rating: number;
   totalSales: number;
   location: string;
+  specialties: string[];
+  itemCount: number;
 }
 
 export interface ProductSpec {
@@ -39,6 +41,8 @@ export const vendors: Vendor[] = [
     rating: 4.9,
     totalSales: 1284,
     location: "Portland, OR",
+    specialties: ["Rare Vinyl Specialist", "Audio Restoration"],
+    itemCount: 214,
   },
   {
     id: "second-spin-vintage",
@@ -49,6 +53,56 @@ export const vendors: Vendor[] = [
     rating: 4.7,
     totalSales: 642,
     location: "Osaka, JP",
+    specialties: ["Vintage Apparel", "Portable Players"],
+    itemCount: 87,
+  },
+  {
+    id: "needle-and-groove",
+    shopName: "Needle & Groove",
+    avatarPlaceholder: "bg-amberGlow",
+    bannerPlaceholder: "bg-pine",
+    bio: "Turntable service bench: belts, stylus swaps and full restorations on vintage decks.",
+    rating: 4.8,
+    totalSales: 419,
+    location: "Berlin, DE",
+    specialties: ["Audio Restorer", "Turntable Service"],
+    itemCount: 36,
+  },
+  {
+    id: "thread-theory",
+    shopName: "Thread Theory",
+    avatarPlaceholder: "bg-pine",
+    bannerPlaceholder: "bg-amberGlow",
+    bio: "Curated vintage tees, windbreakers and tour merch from the 70s to the 90s.",
+    rating: 4.6,
+    totalSales: 873,
+    location: "Lisbon, PT",
+    specialties: ["Vintage Apparel", "Tour Merch Curator"],
+    itemCount: 152,
+  },
+  {
+    id: "wax-cellar",
+    shopName: "Wax Cellar",
+    avatarPlaceholder: "bg-red-600",
+    bannerPlaceholder: "bg-vinylBlack",
+    bio: "Deep crates of jazz, soul and funk. First pressings and obscure imports.",
+    rating: 4.9,
+    totalSales: 2310,
+    location: "Chicago, IL",
+    specialties: ["Rare Vinyl Specialist", "Jazz & Soul"],
+    itemCount: 468,
+  },
+  {
+    id: "static-vault",
+    shopName: "Static Vault",
+    avatarPlaceholder: "bg-vinylBlack",
+    bannerPlaceholder: "bg-red-600",
+    bio: "Tube amps, receivers and speakers, bench-tested and sold with a service report.",
+    rating: 4.7,
+    totalSales: 302,
+    location: "Melbourne, AU",
+    specialties: ["Audio Restorer", "Tube Amps"],
+    itemCount: 41,
   },
 ];
 
