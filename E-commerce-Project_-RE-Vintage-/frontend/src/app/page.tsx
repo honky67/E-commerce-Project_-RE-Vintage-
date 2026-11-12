@@ -1,4 +1,5 @@
 import ProductCard from "../components/ProductCard";
+import SlashHeading from "../components/SlashHeading";
 import { products } from "../data/mockData";
 import VinylRecord from "../components/VinylRecord";
 
@@ -58,9 +59,9 @@ export default function Home() {
 
       {/* CRATE */}
       <section id="crate" className="bg-pine/15 px-6 py-16 md:px-12">
-        <h2 className="clip-slash mb-10 inline-block animate-slash-in bg-vinylBlack px-8 py-2 font-display text-4xl italic text-parchment">
+        <SlashHeading as="h2" className="mb-10">
           Fresh in the crate
-        </h2>
+        </SlashHeading>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} />

@@ -42,19 +42,19 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
             </span>
           )}
         </div>
-        <div className="space-y-1 p-4 pb-2">
-          <h3 className="font-display text-2xl leading-tight">{product.title}</h3>
+        <div className="min-w-0 space-y-1 p-4 pb-2">
+          <h3 className="break-words font-display text-2xl leading-snug">{product.title}</h3>
           <p className="font-display text-3xl text-red-600">${product.price.toFixed(2)}</p>
         </div>
       </Link>
 
-      <div className="flex items-center justify-between gap-2 p-4 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-4 pt-1">
         {vendor && (
           <Link
             href={`/vendor/${vendor.id}`}
-            className="-skew-x-12 bg-vinylBlack px-3 py-1 transition-colors hover:bg-red-600"
+            className="max-w-full -skew-x-12 bg-vinylBlack px-3 py-1 transition-colors hover:bg-red-600"
           >
-            <span className="block skew-x-12 font-mono text-xs font-bold uppercase text-parchment">
+            <span className="block skew-x-12 truncate font-mono text-xs font-bold uppercase text-parchment">
               {vendor.shopName}
             </span>
           </Link>
