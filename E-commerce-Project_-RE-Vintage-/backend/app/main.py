@@ -25,6 +25,9 @@ async def lifespan(_: FastAPI):
             # create_all never alters existing tables; this keeps older databases in sync until Alembic is added.
             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)"))
             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''"))
+            await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS specs TEXT"))
+            await conn.execute(text("ALTER TABLE shops ADD COLUMN IF NOT EXISTS location VARCHAR(200)"))
+            await conn.execute(text("ALTER TABLE shops ADD COLUMN IF NOT EXISTS rating FLOAT"))
     except Exception as exc:
         log.error("Cannot reach the database (%s). Run scripts/setup_db.sh and check backend/.env", type(exc).__name__)
         raise

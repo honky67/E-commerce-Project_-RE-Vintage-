@@ -59,6 +59,7 @@ class Product(BaseModel):
     )
 
     description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    specs: Mapped[str | None] = mapped_column(Text)  # JSON-encoded list of {label, value} pairs
     image_url: Mapped[str | None] = mapped_column(String(500))  # "/uploads/<file>" or "/products/<file>"
 
     shop: Mapped["Shop"] = relationship(back_populates="products", lazy="raise")

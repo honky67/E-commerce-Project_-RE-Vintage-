@@ -54,7 +54,7 @@ async def create_shop(body: ShopCreate, user: User = Depends(current_user), db: 
     taken = await db.scalar(select(Shop.id).where(Shop.slug == base)) is not None
     for _ in range(3):  # retry covers two people claiming the same name at once
         slug = f"{base}-{uuid.uuid4().hex[:4]}" if taken else base
-        shop = Shop(owner_id=owner_id, shop_name=body.shop_name.strip(), slug=slug, bio=body.bio)
+        shop = Shop(owner_id=owner_id, shop_name=body.shop_name.strip(), slug=slug, bio=body.bio, location=body.location)
         db.add(shop)
         if upgrade:  # launching a store makes you a seller
             await db.execute(update(User).where(User.id == owner_id).values(role=UserRole.SELLER))

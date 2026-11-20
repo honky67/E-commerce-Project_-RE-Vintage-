@@ -2,7 +2,7 @@ import enum
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import Enum, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +31,8 @@ class Shop(BaseModel):
     shop_name: Mapped[str] = mapped_column(String(120))
     slug: Mapped[str] = mapped_column(String(140), unique=True, index=True)
     bio: Mapped[str | None] = mapped_column(Text)
+    location: Mapped[str | None] = mapped_column(String(200))
+    rating: Mapped[float | None] = mapped_column(Float)
     vinyl_badge_status: Mapped[VinylBadgeStatus] = mapped_column(
         Enum(
             VinylBadgeStatus,

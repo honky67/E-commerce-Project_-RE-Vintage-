@@ -29,16 +29,32 @@ def _safe_next(n: str | None) -> str:
 
 
 def _public_base(request: Request) -> str:
-    """The URL the browser used (works behind the Next.js proxy and on any VM IP)."""
+    """The public URL for OAuth redirect URIs (always routed via Next.js on port 3000)."""
+    return _frontend_base(request)
+
+
+def _frontend_base(request: Request) -> str:
+    """The Next.js frontend origin (port 3000).  Resolution order:
+    1. FRONTEND_URL env var (or APP_URL as fallback) — set this in .env for a fixed VM IP.
+    2. x-forwarded-host header written by Next.js when it proxies /api/* to FastAPI.
+    3. Same host as the request but on port 3000."""
+    if settings.FRONTEND_URL:
+        return settings.FRONTEND_URL.rstrip("/")
     if settings.APP_URL:
         return settings.APP_URL.rstrip("/")
-    host = (request.headers.get("x-forwarded-host") or request.headers["host"]).split(",")[0].strip()
-    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
-    return f"{proto}://{host}"
+    # Next.js proxy writes x-forwarded-host with the *browser's* host (e.g. 192.168.x.x:3000)
+    fwd_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+    if fwd_host:
+        proto = (request.headers.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
+        return f"{proto}://{fwd_host}"
+    # Direct request to :8000 — swap port to 3000 so the redirect still hits the frontend
+    proto = request.url.scheme
+    hostname = request.url.hostname or "localhost"
+    return f"{proto}://{hostname}:3000"
 
 
-def _fail(reason: str) -> RedirectResponse:
-    return RedirectResponse(f"{settings.APP_URL or ''}/login?error={reason}", status_code=302)
+def _fail(request: Request, reason: str) -> RedirectResponse:
+    return RedirectResponse(f"{_frontend_base(request)}/login?error={reason}", status_code=302)
 
 
 @router.get("/providers")
@@ -51,7 +67,9 @@ async def providers() -> dict[str, str]:
 @router.get("/{provider}/start")
 async def start(provider: str, request: Request, next: str = "/"):
     p = _provider(provider)
-    state = create_state_token({"p": provider, "n": _safe_next(next)})
+    frontend = _frontend_base(request)
+    redirect_uri = f"{frontend}/api/auth/oauth/{provider}/callback"
+    state = create_state_token({"p": provider, "n": _safe_next(next), "f": frontend, "r": redirect_uri})
     if not p.configured:
         if settings.APP_ENV != "development":
             raise HTTPException(503, f"{provider} login is not configured")
@@ -59,7 +77,7 @@ async def start(provider: str, request: Request, next: str = "/"):
     query = urlencode(
         {
             "client_id": p.client_id,
-            "redirect_uri": f"{_public_base(request)}/api/auth/oauth/{provider}/callback",
+            "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": p.scope,
             "state": state,
@@ -83,17 +101,18 @@ async def callback(
     if not data or data.get("p") != provider:
         raise HTTPException(400, "Invalid or expired login state")
     if error or not (code or demo):
-        return _fail("oauth_cancelled")
+        return _fail(request, "oauth_cancelled")
 
     if demo:
         if p.configured or settings.APP_ENV != "development":
             raise HTTPException(400, "Demo login is unavailable")
         profile = Profile(sub=f"demo-{provider}", email=f"{provider}.demo@revintage.demo", name=f"{provider.title()} Demo")
     else:
+        redirect_uri = data.get("r") or f"{_frontend_base(request)}/api/auth/oauth/{provider}/callback"
         try:
-            profile = await fetch_profile(p, code or "", f"{_public_base(request)}/api/auth/oauth/{provider}/callback")
+            profile = await fetch_profile(p, code or "", redirect_uri)
         except (httpx.HTTPError, KeyError, ValueError):
-            return _fail("oauth_failed")
+            return _fail(request, "oauth_failed")
 
     # Accounts are matched by email; providers that return none (Instagram) get a stable placeholder address.
     email = (profile.email or f"{provider}-{profile.sub}@oauth.revintage.demo").lower()
@@ -103,4 +122,6 @@ async def callback(
         db.add(user)
         await db.commit()
     token = create_access_token(str(user.id))
-    return RedirectResponse(f"{settings.APP_URL or ''}/auth/callback#token={token}&next={quote(data['n'])}", status_code=302)
+    # Use the frontend origin stored in the state token; fall back to auto-detection.
+    frontend = data.get("f") or _frontend_base(request)
+    return RedirectResponse(f"{frontend}/auth/callback#token={token}&next={quote(data['n'])}", status_code=302)

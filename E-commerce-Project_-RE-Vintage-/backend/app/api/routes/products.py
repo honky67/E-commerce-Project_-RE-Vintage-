@@ -117,6 +117,7 @@ async def create_product_form(
     description: str = Form("", max_length=5000),
     artist_brand: str = Form("", max_length=255),
     stock_quantity: int = Form(1, ge=0),
+    specs: str | None = Form(None),  # JSON string of [{label, value}, ...]
     shop_id: uuid.UUID | None = Form(None),  # admins pick a shop; sellers default to their own
     image: UploadFile | None = File(None),
     user: User = Depends(current_user),
@@ -138,6 +139,7 @@ async def create_product_form(
         stock_quantity=stock_quantity,
         media_type=CATEGORY_TO_MEDIA[category],
         description=description.strip(),
+        specs=specs,
         image_url=image_url,
     )
     db.add(product)

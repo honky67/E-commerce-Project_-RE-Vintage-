@@ -52,6 +52,7 @@ class Token(ORM):
 class ShopCreate(BaseModel):
     shop_name: str = Field(min_length=2, max_length=120)
     bio: str | None = Field(None, max_length=2000)
+    location: str | None = Field(None, max_length=200)
 
 
 class ShopOut(ORM):
@@ -61,6 +62,8 @@ class ShopOut(ORM):
     shop_name: str
     slug: str
     bio: str | None
+    location: str | None = None
+    rating: float | None = None
     vinyl_badge_status: VinylBadgeStatus
 
 
@@ -76,6 +79,7 @@ class ProductCreate(BaseModel):
     stock_quantity: int = Field(1, ge=0)
     media_type: MediaType
     description: str = Field("", max_length=5000)
+    specs: str | None = Field(None, description="JSON-encoded list of {label, value} pairs")
 
 
 class ProductOut(ORM):
@@ -89,6 +93,7 @@ class ProductOut(ORM):
     media_type: MediaType
     image_url: str | None = None
     description: str = ""
+    specs: str | None = None
 
 
 class CatalogProduct(ProductOut):

@@ -4,7 +4,20 @@ from pathlib import Path
 from pydantic import PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ENV_FILE = Path(__file__).resolve().parents[2] / ".env"  # backend/.env, whatever the working directory
+def find_env_file() -> Path:
+    backend_env = Path(__file__).resolve().parents[2] / ".env"
+    if backend_env.is_file():
+        return backend_env
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.is_file():
+        return cwd_env
+    cwd_backend_env = Path.cwd() / "backend" / ".env"
+    if cwd_backend_env.is_file():
+        return cwd_backend_env
+    return backend_env
+
+
+ENV_FILE = find_env_file()
 
 
 class Settings(BaseSettings):
@@ -32,6 +45,7 @@ class Settings(BaseSettings):
     # Development only: also allow localhost and private-network IPs (VM host-only / bridged adapters).
     CORS_ORIGIN_REGEX: str = r"https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?"
     APP_URL: str | None = None  # public site URL for OAuth redirects, e.g. http://192.168.56.10:3000 (auto-detected if empty)
+    FRONTEND_URL: str | None = None  # Next.js origin; defaults to APP_URL, then auto-detected on port 3000
     UPLOAD_DIR: str | None = None  # defaults to backend/uploads
 
     # Optional social login keys. Without them, development mode uses a built-in demo flow.
@@ -41,6 +55,24 @@ class Settings(BaseSettings):
     FACEBOOK_CLIENT_SECRET: str | None = None
     INSTAGRAM_CLIENT_ID: str | None = None
     INSTAGRAM_CLIENT_SECRET: str | None = None
+
+    @field_validator(
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "FACEBOOK_CLIENT_ID",
+        "FACEBOOK_CLIENT_SECRET",
+        "INSTAGRAM_CLIENT_ID",
+        "INSTAGRAM_CLIENT_SECRET",
+        "APP_URL",
+        "FRONTEND_URL",
+        mode="before",
+    )
+    @classmethod
+    def strip_whitespace_and_quotes(cls, v: str | None) -> str | None:
+        if isinstance(v, str):
+            cleaned = v.strip().strip("'\"").strip()
+            return cleaned if cleaned else None
+        return v
 
     @property
     def cors_origins(self) -> list[str]:
