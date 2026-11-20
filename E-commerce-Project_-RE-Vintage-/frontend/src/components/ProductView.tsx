@@ -15,11 +15,13 @@ const TABS = ["Description", "Specs", "Merchant", "Shipping"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProductView({ product, vendor }: { product: Product; vendor: Vendor }) {
-  const gallery = [
-    { tone: product.imagePlaceholder, label: "Front" },
-    { tone: product.hoverImagePlaceholder, label: "Detail" },
-    { tone: "bg-pine", label: "Back" },
-  ];
+  const gallery: { tone: string; label: string; image?: string }[] = product.image
+    ? [{ tone: product.imagePlaceholder, label: "Front", image: product.image }]
+    : [
+        { tone: product.imagePlaceholder, label: "Front" },
+        { tone: product.hoverImagePlaceholder, label: "Detail" },
+        { tone: "bg-pine", label: "Back" },
+      ];
   const opts = OPTIONS[product.category];
   const [view, setView] = useState(0);
   const [option, setOption] = useState(opts.values[0]);
@@ -49,11 +51,11 @@ export default function ProductView({ product, vendor }: { product: Product; ven
                 exit={{ opacity: 0, x: -40 }}
                 transition={{ duration: 0.22 }}
               >
-                <PlaceholderArt tone={gallery[view].tone} label={gallery[view].label} />
+                <PlaceholderArt tone={gallery[view].tone} label={gallery[view].label} image={gallery[view].image} />
               </motion.div>
             </AnimatePresence>
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className={`mt-4 flex gap-3 ${gallery.length < 2 ? "hidden" : ""}`}>
             {gallery.map((g, i) => (
               <button
                 key={g.label}
@@ -147,7 +149,7 @@ export default function ProductView({ product, vendor }: { product: Product; ven
               {tab === "Merchant" && (
                 <div>
                   <p className="font-display text-2xl italic">{vendor.shopName}</p>
-                  <p className="text-xs opacity-70">★ {vendor.rating} · {vendor.totalSales.toLocaleString()} sales · {vendor.location}</p>
+                  <p className="text-xs opacity-70">{vendor.rating > 0 ? `★ ${vendor.rating} · ${vendor.totalSales.toLocaleString()} sales` : "New shop"}{vendor.location ? ` · ${vendor.location}` : ""}</p>
                   <p className="mt-2">{vendor.bio}</p>
                   <Link href={`/vendor/${vendor.id}`} className="mt-3 inline-block -skew-x-6 bg-vinylBlack px-3 py-1 text-xs font-bold uppercase text-parchment hover:bg-red-600">
                     Visit shop →

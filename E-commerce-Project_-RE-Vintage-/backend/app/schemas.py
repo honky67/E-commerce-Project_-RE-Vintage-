@@ -1,9 +1,19 @@
+import enum
 import uuid
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models import ConditionGrade, MediaType, UserRole, VinylBadgeStatus
+
+
+class Category(str, enum.Enum):
+    RECORDS = "RECORDS"
+    APPAREL = "APPAREL"
+    TURNTABLES = "TURNTABLES"
+
+
+CATEGORY_TO_MEDIA = {Category.RECORDS: MediaType.VINYL, Category.APPAREL: MediaType.APPAREL, Category.TURNTABLES: MediaType.TURNTABLE}
 
 
 class ORM(BaseModel):
@@ -45,6 +55,7 @@ class ShopCreate(BaseModel):
 
 
 class ShopOut(ORM):
+    item_count: int = 0
     id: uuid.UUID
     owner_id: uuid.UUID
     shop_name: str
@@ -64,6 +75,7 @@ class ProductCreate(BaseModel):
     condition_grade: ConditionGrade
     stock_quantity: int = Field(1, ge=0)
     media_type: MediaType
+    description: str = Field("", max_length=5000)
 
 
 class ProductOut(ORM):
@@ -75,3 +87,10 @@ class ProductOut(ORM):
     condition_grade: ConditionGrade
     stock_quantity: int
     media_type: MediaType
+    image_url: str | None = None
+    description: str = ""
+
+
+class CatalogProduct(ProductOut):
+    shop_name: str
+    shop_slug: str

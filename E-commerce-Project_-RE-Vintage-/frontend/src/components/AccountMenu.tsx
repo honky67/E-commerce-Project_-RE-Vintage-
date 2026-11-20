@@ -42,6 +42,7 @@ export default function AccountMenu() {
   const links = [
     { label: "My store", href: "/dashboard/store" },
     { label: "Products", href: "/dashboard/products" },
+    { label: "Add product", href: "/seller/products/new" },
     ...(user.role === "admin" ? [{ label: "Admin portal", href: "/admin" }] : []),
   ];
 

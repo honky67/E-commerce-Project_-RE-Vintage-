@@ -28,7 +28,23 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_MINUTES: int = 60
     APP_ENV: str = "development"  # set to "production" to disable demo accounts
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"  # comma-separated
+    # Development only: also allow localhost and private-network IPs (VM host-only / bridged adapters).
+    CORS_ORIGIN_REGEX: str = r"https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?"
+    APP_URL: str | None = None  # public site URL for OAuth redirects, e.g. http://192.168.56.10:3000 (auto-detected if empty)
+    UPLOAD_DIR: str | None = None  # defaults to backend/uploads
+
+    # Optional social login keys. Without them, development mode uses a built-in demo flow.
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    FACEBOOK_CLIENT_ID: str | None = None
+    FACEBOOK_CLIENT_SECRET: str | None = None
+    INSTAGRAM_CLIENT_ID: str | None = None
+    INSTAGRAM_CLIENT_SECRET: str | None = None
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     @field_validator("DATABASE_URL")
     @classmethod

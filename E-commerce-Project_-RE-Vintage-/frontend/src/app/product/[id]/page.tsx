@@ -1,14 +1,12 @@
 import { notFound } from "next/navigation";
 import ProductView from "../../../components/ProductView";
-import { getProduct, getVendor, products } from "../../../data/mockData";
+import { getProduct, getShop } from "../../../lib/catalog";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ id: p.id }));
-}
+export const dynamic = "force-dynamic";
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = getProduct(params.id);
-  const vendor = product && getVendor(product.vendorId);
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await getProduct(params.id);
+  const vendor = product && (await getShop(product.vendorId));
   if (!product || !vendor) notFound();
   return <ProductView product={product} vendor={vendor} />;
 }

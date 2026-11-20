@@ -19,9 +19,11 @@ export default function ShopCard({ vendor, index = 0 }: { vendor: Vendor; index?
           className="absolute inset-0 opacity-20"
           style={{ backgroundImage: "repeating-linear-gradient(-45deg, #F8F5EE 0 2px, transparent 2px 14px)" }}
         />
-        <span className="absolute right-0 top-3 -skew-x-12 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment">
-          ★ {vendor.rating}
-        </span>
+        {vendor.rating > 0 && (
+          <span className="absolute right-0 top-3 -skew-x-12 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment">
+            ★ {vendor.rating}
+          </span>
+        )}
       </div>
 
       <div className="px-4 pb-4">
@@ -30,6 +32,7 @@ export default function ShopCard({ vendor, index = 0 }: { vendor: Vendor; index?
         />
         <h3 className="mt-3 font-display text-3xl italic leading-tight">{vendor.shopName}</h3>
         <p className="font-mono text-xs opacity-70">{vendor.location}</p>
+        {vendor.bio && <p className="mt-2 line-clamp-2 font-mono text-xs">{vendor.bio}</p>}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {vendor.specialties.map((s) => (

@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ShopCard from "../../components/ShopCard";
 import SlashHeading from "../../components/SlashHeading";
-import { vendors } from "../../data/mockData";
+import { getShops } from "../../lib/catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Shops · RE:VINTAGE" };
 
-export default function ShopsPage() {
+export default async function ShopsPage() {
+  const shops = await getShops();
   return (
     <section className="px-6 py-12 md:px-12">
       <SlashHeading as="h1" className="mb-4">
@@ -22,7 +25,8 @@ export default function ShopsPage() {
         Open your own store →
       </Link>
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {vendors.map((v, i) => (
+        {shops.length === 0 && <p className="font-mono text-sm">No shops yet. Be the first to open one.</p>}
+        {shops.map((v, i) => (
           <ShopCard key={v.id} vendor={v} index={i} />
         ))}
       </div>

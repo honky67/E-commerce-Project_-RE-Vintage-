@@ -1,12 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import PageShell from "./PageShell";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD, SHOW_DEMO } from "../lib/demo";
+import { API, api } from "../lib/api";
 import { btn, input, label } from "../lib/ui";
+
+const SOCIAL = [
+  { id: "google", label: "Continue with Google", mark: "G", markClass: "bg-red-600 text-parchment" },
+  { id: "facebook", label: "Continue with Facebook", mark: "f", markClass: "bg-vinylBlack text-parchment" },
+  { id: "instagram", label: "Continue with Instagram", mark: "IG", markClass: "bg-amberGlow text-vinylBlack" },
+] as const;
+
+const ERRORS: Record<string, string> = {
+  oauth_failed: "Social login failed. Please try again or use email.",
+  oauth_cancelled: "Social login was cancelled.",
+};
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { login, register } = useAuth();
@@ -15,19 +26,25 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [next, setNext] = useState("/");
+  const [providers, setProviders] = useState<Record<string, string>>({});
   const isLogin = mode === "login";
 
-  const finish = (fallback = "/") => {
-    const next = new URLSearchParams(window.location.search).get("next");
-    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : fallback);
-  };
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const n = q.get("next");
+    if (n && n.startsWith("/") && !n.startsWith("//")) setNext(n);
+    const e = q.get("error");
+    if (e) setError(ERRORS[e] ?? "Login failed.");
+    api<Record<string, string>>("/auth/oauth/providers").then(setProviders).catch(() => undefined);
+  }, []);
 
-  const run = async (action: () => Promise<void>, fallback?: string) => {
+  const run = async (action: () => Promise<void>, fallback = "/") => {
     setBusy(true);
     setError("");
     try {
       await action();
-      finish(fallback);
+      router.push(next !== "/" ? next : fallback);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setBusy(false);
@@ -39,9 +56,16 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     run(() => (isLogin ? login : register)(email, password));
   };
 
+  const hasLive = Object.values(providers).some((v) => v === "live");
+  const visibleSocial = SOCIAL.filter((s) => {
+    const status = providers[s.id];
+    if (hasLive) return status === "live";
+    return status !== "off";
+  });
+
   return (
     <PageShell title={isLogin ? "Log in" : "Join the collective"}>
-      <div className="grid max-w-3xl gap-8 md:grid-cols-2">
+      <div className="flex max-w-md justify-center">
         <form onSubmit={submit} className="space-y-5 self-start border-2 border-vinylBlack bg-parchment p-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
           <div>
             <label className={label} htmlFor="email">Email</label>
@@ -56,6 +80,34 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           <button type="submit" disabled={busy} className={btn}>
             {busy ? "…" : isLogin ? "Log in" : "Create account"}
           </button>
+
+          {visibleSocial.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 font-mono text-xs font-bold" aria-hidden>
+                <span className="h-0.5 flex-1 bg-vinylBlack" />
+                OR
+                <span className="h-0.5 flex-1 bg-vinylBlack" />
+              </div>
+
+              <div className="space-y-3">
+                {visibleSocial.map((s) => (
+                  <a
+                    key={s.id}
+                    href={`${API}/api/auth/oauth/${s.id}/start?next=${encodeURIComponent(next)}`}
+                    className="flex items-center gap-3 -skew-x-3 border-2 border-vinylBlack bg-parchment px-3 py-2 font-mono text-xs font-bold uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-colors hover:bg-amberGlow"
+                  >
+                    <span className={`flex h-6 w-8 items-center justify-center border-2 border-vinylBlack ${s.markClass}`}>{s.mark}</span>
+                    <span className="flex-1">{s.label}</span>
+                    {providers[s.id] === "demo" && <span className="text-[10px] text-red-600">demo</span>}
+                  </a>
+                ))}
+                {!hasLive && Object.values(providers).includes("demo") && (
+                  <p className="font-mono text-[10px] opacity-60">Demo mode: set OAuth keys in backend/.env to enable real sign-in.</p>
+                )}
+              </div>
+            </>
+          )}
+
           <p className="font-mono text-xs">
             {isLogin ? "New here? " : "Already a member? "}
             <Link href={isLogin ? "/register" : "/login"} className="font-bold underline hover:text-red-600">
@@ -64,26 +116,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           </p>
         </form>
 
-        {isLogin && SHOW_DEMO && (
-          <section aria-label="Demo login" className="self-start border-2 border-vinylBlack bg-vinylBlack p-6 text-parchment shadow-[3px_3px_0px_0px_rgba(220,38,38,1)]">
-            <h2 className="font-display text-2xl italic">One-click demo login</h2>
-            <p className="mb-4 font-mono text-xs opacity-70">Test accounts for quick access. Dev only.</p>
-            <div className="space-y-3">
-              {DEMO_ACCOUNTS.map((a) => (
-                <button
-                  key={a.email}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => run(() => login(a.email, DEMO_PASSWORD), a.home)}
-                  className="block w-full -skew-x-6 border-2 border-parchment bg-vinylBlack px-4 py-2 text-left transition-colors hover:bg-amberGlow hover:text-vinylBlack disabled:opacity-40"
-                >
-                  <span className="block font-mono text-sm font-bold uppercase">{a.label}</span>
-                  <span className="block font-mono text-[10px] opacity-70">{a.email} · {a.note}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+
       </div>
     </PageShell>
   );

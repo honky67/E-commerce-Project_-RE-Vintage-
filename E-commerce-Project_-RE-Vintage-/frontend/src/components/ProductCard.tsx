@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { getVendor, type Product } from "../data/mockData";
+import type { Product } from "../data/mockData";
 import PlaceholderArt from "./PlaceholderArt";
 
 export default function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
-  const vendor = getVendor(product.vendorId);
+  const vendor = product.vendorName ? { id: product.vendorId, shopName: product.vendorName } : undefined;
   const soldOut = product.stockCount === 0;
 
   const quickAdd = () => {
@@ -31,10 +31,12 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative h-48 overflow-hidden border-b-2 border-vinylBlack">
           <motion.div className="absolute inset-0" animate={{ scale: hovered ? 1.08 : 1 }} transition={{ duration: 0.35 }}>
-            <PlaceholderArt tone={product.imagePlaceholder} label={product.category} />
-            <motion.div className="absolute inset-0" animate={{ opacity: hovered ? 1 : 0 }} transition={{ duration: 0.25 }}>
-              <PlaceholderArt tone={product.hoverImagePlaceholder} label="Detail" />
-            </motion.div>
+            <PlaceholderArt tone={product.imagePlaceholder} label={product.category} image={product.image} />
+            {!product.image && (
+              <motion.div className="absolute inset-0" animate={{ opacity: hovered ? 1 : 0 }} transition={{ duration: 0.25 }}>
+                <PlaceholderArt tone={product.hoverImagePlaceholder} label="Detail" />
+              </motion.div>
+            )}
           </motion.div>
           {soldOut && (
             <span className="absolute right-0 top-3 -skew-x-12 bg-vinylBlack px-4 py-1 font-mono text-xs font-bold uppercase text-parchment">

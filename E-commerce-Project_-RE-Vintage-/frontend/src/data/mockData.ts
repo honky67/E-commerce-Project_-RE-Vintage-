@@ -29,6 +29,8 @@ export interface Product {
   description: string;
   specs: ProductSpec[];
   stockCount: number;
+  vendorName?: string; // set for products loaded from the API
+  image?: string; // URL of a real photo; falls back to the color placeholder
 }
 
 export const vendors: Vendor[] = [

@@ -35,9 +35,11 @@ async def seed_demo_users() -> None:
             db.add_all(
                 [
                     Product(shop_id=shop.id, title="Midnight at the Blue Room", artist_brand="The Hollis Quartet", price=42,
-                            condition_grade=ConditionGrade.VG_PLUS, stock_quantity=2, media_type=MediaType.VINYL),
+                            condition_grade=ConditionGrade.VG_PLUS, stock_quantity=2, media_type=MediaType.VINYL,
+                            image_url="/products/vnl-1-front.jpg"),
                     Product(shop_id=shop.id, title="Tour Windbreaker, 1978", artist_brand="Northgate Surplus", price=65,
-                            condition_grade=ConditionGrade.VG, stock_quantity=1, media_type=MediaType.APPAREL),
+                            condition_grade=ConditionGrade.VG, stock_quantity=1, media_type=MediaType.APPAREL,
+                            image_url="/products/app-1-front.jpg"),
                 ]
             )
         await db.commit()

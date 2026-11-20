@@ -19,6 +19,19 @@ def create_access_token(subject: str) -> str:
     return jwt.encode({"sub": subject, "exp": exp}, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
+def create_state_token(payload: dict) -> str:
+    exp = datetime.now(timezone.utc) + timedelta(minutes=10)
+    return jwt.encode({**payload, "exp": exp, "typ": "oauth_state"}, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_state_token(token: str) -> dict | None:
+    try:
+        data = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except jwt.PyJWTError:
+        return None
+    return data if data.get("typ") == "oauth_state" else None
+
+
 def decode_token(token: str) -> str | None:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])["sub"]

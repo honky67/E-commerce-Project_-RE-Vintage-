@@ -1,22 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import VendorCatalog from "../../../components/VendorCatalog";
-import { getVendor, getVendorProducts, vendors } from "../../../data/mockData";
+import { getProducts, getShop } from "../../../lib/catalog";
 
-export function generateStaticParams() {
-  return vendors.map((v) => ({ id: v.id }));
-}
+export const dynamic = "force-dynamic";
 
-export default function VendorPage({ params }: { params: { id: string } }) {
-  const vendor = getVendor(params.id);
+export default async function VendorPage({ params }: { params: { id: string } }) {
+  const vendor = await getShop(params.id);
   if (!vendor) notFound();
-  const items = getVendorProducts(vendor.id);
+  const items = await getProducts({ shop: vendor.id });
 
   const stats = [
-    ["Rating", `★ ${vendor.rating}`],
-    ["Sales", vendor.totalSales.toLocaleString()],
+    ...(vendor.rating > 0 ? [["Rating", `★ ${vendor.rating}`], ["Sales", vendor.totalSales.toLocaleString()]] : []),
     ["Listings", String(items.length)],
-    ["Location", vendor.location],
+    ...(vendor.location ? [["Location", vendor.location]] : []),
   ];
 
   return (
@@ -36,9 +33,11 @@ export default function VendorPage({ params }: { params: { id: string } }) {
             <h1 className="inline-block -skew-x-6 bg-vinylBlack px-5 py-1 font-display text-5xl italic text-parchment">
               {vendor.shopName}
             </h1>
-            <span className="ml-3 inline-block -skew-x-12 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment">
-              ★ {vendor.rating}
-            </span>
+            {vendor.rating > 0 && (
+              <span className="ml-3 inline-block -skew-x-12 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment">
+                ★ {vendor.rating}
+              </span>
+            )}
           </div>
         </div>
         <p className="mt-6 max-w-2xl font-mono text-sm leading-relaxed">{vendor.bio}</p>

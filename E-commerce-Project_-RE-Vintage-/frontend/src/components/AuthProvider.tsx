@@ -11,6 +11,7 @@ interface Ctx {
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
+  acceptToken: (token: string) => Promise<boolean>; // used by the social-login callback
 }
 
 const AuthContext = createContext<Ctx | null>(null);
@@ -66,6 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     ready,
     refresh,
+    acceptToken: async (token) => {
+      localStorage.setItem(TOKEN_KEY, token);
+      setFlag(true);
+      try {
+        setUser(await api<User>("/auth/me"));
+        return true;
+      } catch {
+        clear();
+        return false;
+      }
+    },
     login: (e, p) => authed("/auth/login", e, p),
     register: (e, p) => authed("/auth/register", e, p),
     logout: () => {

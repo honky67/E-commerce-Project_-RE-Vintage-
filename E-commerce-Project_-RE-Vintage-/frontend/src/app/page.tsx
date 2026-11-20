@@ -1,6 +1,8 @@
 import ProductCard from "../components/ProductCard";
 import SlashHeading from "../components/SlashHeading";
-import { products } from "../data/mockData";
+import { getProducts } from "../lib/catalog";
+
+export const dynamic = "force-dynamic";
 import VinylRecord from "../components/VinylRecord";
 
 // literal strings so Tailwind can see them
@@ -13,7 +15,8 @@ const GRADES = [
   ["Fair", "Plays through. Heavy wear."],
 ];
 
-export default function Home() {
+export default async function Home() {
+  const products = await getProducts({ limit: 6 });
   return (
     <main className="overflow-x-hidden">
 
@@ -63,6 +66,7 @@ export default function Home() {
           Fresh in the crate
         </SlashHeading>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {products.length === 0 && <p className="font-mono text-sm">No products yet. Sellers can add some from their dashboard.</p>}
           {products.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} />
           ))}

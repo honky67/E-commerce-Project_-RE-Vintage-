@@ -12,6 +12,7 @@ export default function StoreBuilder() {
   const [shop, setShop] = useState<Shop | null | undefined>(undefined);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -24,7 +25,7 @@ export default function StoreBuilder() {
     setBusy(true);
     setError("");
     try {
-      setShop(await api<Shop>("/shops", { method: "POST", body: JSON.stringify({ shop_name: name, bio: bio || null }) }));
+      setShop(await api<Shop>("/shops", { method: "POST", body: JSON.stringify({ shop_name: name, bio: bio || null, location: location || null }) }));
       await refresh(); // role is now "seller"
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create shop");
@@ -40,7 +41,7 @@ export default function StoreBuilder() {
       <PageShell title="Your store is live">
         <div className="border-2 border-vinylBlack bg-parchment p-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
           <p className="font-display text-4xl italic">{shop.shop_name}</p>
-          <p className="mt-1 font-mono text-xs opacity-70">/{shop.slug} · badge: {shop.vinyl_badge_status}</p>
+          <p className="mt-1 font-mono text-xs opacity-70">/{shop.slug} · badge: {shop.vinyl_badge_status}{shop.location ? ` · ${shop.location}` : ""}</p>
           {shop.bio && <p className="mt-4 font-mono text-sm">{shop.bio}</p>}
           <Link href="/dashboard/products" className={`${btn} mt-6 inline-block`}>Manage products →</Link>
         </div>
@@ -59,6 +60,10 @@ export default function StoreBuilder() {
           <div>
             <label className={label} htmlFor="bio">Bio</label>
             <textarea id="bio" rows={4} maxLength={2000} value={bio} onChange={(e) => setBio(e.target.value)} className={input} placeholder="What do you sell? How do you grade?" />
+          </div>
+          <div>
+            <label className={label} htmlFor="location">Location <span className="font-normal opacity-60">(optional)</span></label>
+            <input id="location" maxLength={200} value={location} onChange={(e) => setLocation(e.target.value)} className={input} placeholder="Portland, OR" />
           </div>
           {error && <p role="alert" className="-skew-x-6 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment">{error}</p>}
           <button type="submit" disabled={busy} className={btn}>{busy ? "Launching…" : "Launch store"}</button>

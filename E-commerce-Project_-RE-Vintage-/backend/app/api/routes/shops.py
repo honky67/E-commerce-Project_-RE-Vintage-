@@ -2,13 +2,13 @@ import re
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import current_user
 from app.db.session import get_db
-from app.models import Shop, User, UserRole
+from app.models import Product, Shop, User, UserRole
 from app.schemas import ShopCreate, ShopOut
 
 router = APIRouter(prefix="/shops", tags=["shops"])
@@ -22,7 +22,15 @@ def slugify(s: str) -> str:
 async def list_shops(
     limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge=0), db: AsyncSession = Depends(get_db)
 ):
-    return (await db.scalars(select(Shop).order_by(Shop.created_at.desc()).limit(limit).offset(offset))).all()
+    counts = select(Product.shop_id, func.count().label("n")).group_by(Product.shop_id).subquery()
+    stmt = (
+        select(Shop, func.coalesce(counts.c.n, 0))
+        .outerjoin(counts, counts.c.shop_id == Shop.id)
+        .order_by(Shop.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return [ShopOut.model_validate(s).model_copy(update={"item_count": n}) for s, n in (await db.execute(stmt)).all()]
 
 
 @router.get("/mine", response_model=list[ShopOut])  # declared before /{slug}
@@ -35,7 +43,8 @@ async def get_shop(slug: str, db: AsyncSession = Depends(get_db)):
     shop = await db.scalar(select(Shop).where(Shop.slug == slug))
     if not shop:
         raise HTTPException(404, "Shop not found")
-    return shop
+    count = await db.scalar(select(func.count()).select_from(Product).where(Product.shop_id == shop.id))
+    return ShopOut.model_validate(shop).model_copy(update={"item_count": count or 0})
 
 
 @router.post("", response_model=ShopOut, status_code=201)

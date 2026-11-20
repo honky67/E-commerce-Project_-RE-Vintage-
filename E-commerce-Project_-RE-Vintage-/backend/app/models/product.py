@@ -3,7 +3,7 @@ import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Enum, ForeignKey, Numeric, String
+from sqlalchemy import CheckConstraint, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,5 +57,8 @@ class Product(BaseModel):
         ),
         index=True,
     )
+
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    image_url: Mapped[str | None] = mapped_column(String(500))  # "/uploads/<file>" or "/products/<file>"
 
     shop: Mapped["Shop"] = relationship(back_populates="products", lazy="raise")
