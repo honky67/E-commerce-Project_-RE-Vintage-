@@ -1,9 +1,11 @@
+import Image from "next/image";
+import Link from "next/link";
 import ProductCard from "../components/ProductCard";
 import SlashHeading from "../components/SlashHeading";
 import { getProducts } from "../lib/catalog";
+import VinylRecord from "../components/VinylRecord";
 
 export const dynamic = "force-dynamic";
-import VinylRecord from "../components/VinylRecord";
 
 // literal strings so Tailwind can see them
 const TILTS = ["hover-tilt-1", "-hover-tilt-1"];
@@ -19,46 +21,97 @@ export default async function Home() {
   const products = await getProducts({ limit: 6 });
   return (
     <main className="overflow-x-hidden">
+      {/* HERO BANNER */}
+      <section className="relative flex min-h-[440px] w-full flex-col justify-between overflow-hidden border-b-2 border-vinylBlack bg-vinylBlack md:min-h-[540px]">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-banner.jpg"
+            alt="RE:VINTAGE Analogue Collective vinyl records wall"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+        </div>
 
-      {/* HERO */}
-      <section className="px-6 pb-16 pt-8 md:px-12">
-        <div className="relative z-10 max-w-xl">
-          <p className="mb-4 font-mono text-xs uppercase tracking-[0.3em] text-pine">
-            Analogue · Vintage · Independent
-          </p>
-          <h1 className="font-display text-6xl italic leading-[1.05] md:text-8xl">
-            <span className="clip-slash inline-block animate-slash-in bg-vinylBlack px-6 py-1 text-parchment">
-              Spin the
-            </span>
-            <br />
-            <span
-              className="clip-slash inline-block animate-slash-in bg-amberGlow px-6 py-1 text-vinylBlack"
-              style={{ animationDelay: "150ms" }}
-            >
-              past.
-            </span>
-          </h1>
-          <p className="mt-8 max-w-md font-mono text-sm leading-relaxed">
-            A marketplace of independent shops selling graded vinyl, vintage
-            apparel and restored turntables. Every record, honestly described.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="#crate"
-              className="hover-tilt-2 inline-block border-2 border-vinylBlack bg-amberGlow px-6 py-3 font-mono text-sm font-bold uppercase shadow-p5"
-            >
-              Browse the crate
-            </a>
-            <a
-              href="#grades"
-              className="-hover-tilt-2 inline-block border-2 border-vinylBlack bg-parchment px-6 py-3 font-mono text-sm font-bold uppercase shadow-p5"
-            >
-              How we grade
-            </a>
+        {/* Directional Dark Gradient Overlay: 0.82 left tint to 0.38 right tint */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(18,16,14,0.82) 0%, rgba(18,16,14,0.82) 42%, rgba(18,16,14,0.64) 68%, rgba(18,16,14,0.38) 100%)",
+          }}
+        />
+
+        {/* Mobile vertical contrast enhancement overlay */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-vinylBlack/80 via-transparent to-transparent md:hidden"
+        />
+
+        {/* Hero Editorial Content */}
+        <div className="relative z-20 flex flex-1 flex-col justify-center px-6 py-12 sm:py-16 md:px-12 md:py-20">
+          <div className="max-w-2xl">
+            {/* Tilted Crimson / Gold Eyebrow Badge */}
+            <div className="mb-4 inline-block sm:mb-5">
+              <span className="hover-tilt-2 inline-flex -rotate-2 items-center gap-2 border-2 border-amberGlow bg-red-600 px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-widest text-parchment shadow-p5">
+                <span className="h-2 w-2 rounded-full bg-amberGlow" />
+                <span className="text-amberGlow">ANALOGUE COLLECTIVE</span>
+                <span className="text-parchment/60">•</span>
+                <span className="text-parchment">EST. 2026</span>
+              </span>
+            </div>
+
+            {/* Bold Editorial Headline */}
+            <h1 className="font-display text-4xl italic leading-[1.04] tracking-tight text-parchment drop-shadow-sm sm:text-5xl md:text-6xl lg:text-7xl">
+              CURATED VINYL, CLASSIC GEAR{" "}
+              <span className="not-italic text-amberGlow">&amp;</span>{" "}
+              VINTAGE APPAREL
+            </h1>
+
+            {/* Concise 1-sentence Subheadline */}
+            <p className="mt-4 max-w-xl font-mono text-xs leading-relaxed text-parchment/90 sm:mt-6 sm:text-sm md:text-base">
+              An independent marketplace of verified shops offering graded vinyl, restored analogue gear, and authentic vintage apparel.
+            </p>
+
+            {/* CTAs: Gold Primary & Crisp White/Outlined Secondary */}
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <a
+                href="#crate"
+                className="hover-tilt-2 inline-flex items-center justify-center border-2 border-vinylBlack bg-amberGlow px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-vinylBlack shadow-p5 transition-transform active:translate-x-0.5 active:translate-y-0.5 sm:text-sm"
+              >
+                EXPLORE CATALOG
+              </a>
+              <Link
+                href="/shops"
+                className="-hover-tilt-2 inline-flex items-center justify-center border-2 border-parchment bg-parchment/15 px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-parchment shadow-[4px_4px_0px_0px_rgba(248,245,238,0.25)] backdrop-blur-sm transition-all hover:bg-parchment hover:text-vinylBlack hover:shadow-p5 active:translate-x-0.5 active:translate-y-0.5 sm:text-sm"
+              >
+                BROWSE SHOPS
+              </Link>
+            </div>
           </div>
         </div>
 
-        </section>
+        {/* Compact 3-item Trust Bar along the bottom edge */}
+        <div className="relative z-20 border-t-2 border-vinylBlack bg-vinylBlack/90 backdrop-blur-md">
+          <div className="grid grid-cols-1 divide-y-2 divide-vinylBlack font-mono text-[11px] font-bold uppercase tracking-wider text-parchment sm:grid-cols-3 sm:divide-y-0 sm:divide-x-2 sm:text-xs">
+            <div className="flex items-center justify-center gap-2.5 px-4 py-3 text-center">
+              <span className="h-2 w-2 -rotate-45 bg-amberGlow" />
+              <span>VERIFIED INDEPENDENT SHOPS</span>
+            </div>
+            <div className="flex items-center justify-center gap-2.5 px-4 py-3 text-center">
+              <span className="h-2 w-2 -rotate-45 bg-red-600" />
+              <span>GRADED VINYL &amp; AUDIO GEAR</span>
+            </div>
+            <div className="flex items-center justify-center gap-2.5 px-4 py-3 text-center">
+              <span className="h-2 w-2 -rotate-45 bg-pine" />
+              <span>CURATED ANALOGUE FINDS</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CRATE */}
       <section id="crate" className="bg-pine/15 px-6 py-16 md:px-12">

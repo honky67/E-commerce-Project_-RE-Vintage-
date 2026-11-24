@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import require_admin
 from app.core.storage import delete_image
 from app.db.session import get_db
+from app.api.product_cleanup import delete_products
 from app.models import Product, Shop, User
 from app.schemas import BadgeUpdate, ShopOut, UserOut
 
@@ -38,7 +39,8 @@ async def admin_delete_shop(shop_id: uuid.UUID, db: AsyncSession = Depends(get_d
     shop = await db.get(Shop, shop_id)
     if not shop:
         raise HTTPException(404, "Shop not found")
-    urls = (await db.scalars(select(Product.image_url).where(Product.shop_id == shop_id))).all()
+    product_ids = (await db.scalars(select(Product.id).where(Product.shop_id == shop_id))).all()
+    urls = await delete_products(db, list(product_ids))
     await db.delete(shop)
     await db.commit()
     for url in urls:

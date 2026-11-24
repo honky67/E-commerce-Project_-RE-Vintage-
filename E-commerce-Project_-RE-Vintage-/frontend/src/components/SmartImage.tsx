@@ -16,8 +16,12 @@ export default function SmartImage({
   fallbackClass?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
-  const url = assetUrl(src);
+  const [url, setUrl] = useState<string | null>(() => assetUrl(src));
+
+  useEffect(() => {
+    setUrl(assetUrl(src));
+    setFailed(false);
+  }, [src]);
 
   if (!url || failed) return <div role="img" aria-label={alt} className={`${fallbackClass} ${className}`} />;
   // eslint-disable-next-line @next/next/no-img-element

@@ -37,5 +37,6 @@ async def save_image(file: UploadFile) -> str:
 
 
 def delete_image(url: str | None) -> None:
-    if url and url.startswith("/uploads/"):
-        (UPLOAD_DIR / Path(url).name).unlink(missing_ok=True)
+    if url and "/uploads/" in url:
+        name = url.split("/uploads/")[-1]
+        (UPLOAD_DIR / Path(name).name).unlink(missing_ok=True)

@@ -10,6 +10,17 @@ const nextConfig = {
       { source: "/uploads/:path*", destination: `${BACKEND_URL}/uploads/:path*` },
     ];
   },
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "http", hostname: "127.0.0.1" },
+      { protocol: "http", hostname: "10.**" },
+      { protocol: "http", hostname: "192.168.**" },
+      { protocol: "http", hostname: "172.**" },
+      { protocol: "https", hostname: "**" },
+    ],
+  },
 };
 
 export default nextConfig;

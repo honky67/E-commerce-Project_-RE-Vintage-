@@ -28,7 +28,7 @@ export default function ProductManager() {
   }, [user]);
 
   const remove = async (p: ApiProduct) => {
-    if (!confirm(`Remove "${p.title}"?`)) return;
+    if (!confirm(`Delete "${p.title}"?`)) return;
     try {
       await api(`/products/${p.id}`, { method: "DELETE" });
       setItems((list) => list.filter((x) => x.id !== p.id));
@@ -64,7 +64,7 @@ export default function ProductManager() {
             </Link>
             <div className="flex items-center gap-4">
               <span className="font-display text-2xl text-red-600">${Number(p.price).toFixed(2)}</span>
-              <button type="button" onClick={() => remove(p)} className={dangerBtn}>Remove</button>
+              <button type="button" onClick={() => remove(p)} className={dangerBtn}>Delete</button>
             </div>
           </li>
         ))}

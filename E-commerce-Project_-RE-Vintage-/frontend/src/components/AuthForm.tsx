@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import PageShell from "./PageShell";
-import { API, api } from "../lib/api";
+import { API, api, getBackendBaseUrl } from "../lib/api";
 import { btn, input, label } from "../lib/ui";
 
 const SOCIAL = [
@@ -28,6 +28,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [busy, setBusy] = useState(false);
   const [next, setNext] = useState("/");
   const [providers, setProviders] = useState<Record<string, string>>({});
+  const [backendBase, setBackendBase] = useState("");
   const isLogin = mode === "login";
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     if (n && n.startsWith("/") && !n.startsWith("//")) setNext(n);
     const e = q.get("error");
     if (e) setError(ERRORS[e] ?? "Login failed.");
+    setBackendBase(getBackendBaseUrl());
     api<Record<string, string>>("/auth/oauth/providers").then(setProviders).catch(() => undefined);
   }, []);
 
@@ -90,17 +92,20 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               </div>
 
               <div className="space-y-3">
-                {visibleSocial.map((s) => (
-                  <a
-                    key={s.id}
-                    href={`${API}/api/auth/oauth/${s.id}/start?next=${encodeURIComponent(next)}`}
-                    className="flex items-center gap-3 -skew-x-3 border-2 border-vinylBlack bg-parchment px-3 py-2 font-mono text-xs font-bold uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-colors hover:bg-amberGlow"
-                  >
-                    <span className={`flex h-6 w-8 items-center justify-center border-2 border-vinylBlack ${s.markClass}`}>{s.mark}</span>
-                    <span className="flex-1">{s.label}</span>
-                    {providers[s.id] === "demo" && <span className="text-[10px] text-red-600">demo</span>}
-                  </a>
-                ))}
+                {visibleSocial.map((s) => {
+                  const authBase = backendBase || (typeof window !== "undefined" ? getBackendBaseUrl() : API);
+                  return (
+                    <a
+                      key={s.id}
+                      href={`${authBase}/api/auth/oauth/${s.id}/start?next=${encodeURIComponent(next)}`}
+                      className="flex items-center gap-3 -skew-x-3 border-2 border-vinylBlack bg-parchment px-3 py-2 font-mono text-xs font-bold uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-colors hover:bg-amberGlow"
+                    >
+                      <span className={`flex h-6 w-8 items-center justify-center border-2 border-vinylBlack ${s.markClass}`}>{s.mark}</span>
+                      <span className="flex-1">{s.label}</span>
+                      {providers[s.id] === "demo" && <span className="text-[10px] text-red-600">demo</span>}
+                    </a>
+                  );
+                })}
                 {!hasLive && Object.values(providers).includes("demo") && (
                   <p className="font-mono text-[10px] opacity-60">Demo mode: set OAuth keys in backend/.env to enable real sign-in.</p>
                 )}

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import current_user
+from app.api.product_cleanup import delete_products
 from app.core.storage import delete_image, save_image
 from app.db.session import get_db
 from app.models import ConditionGrade, MediaType, Product, Shop, User, UserRole
@@ -51,11 +52,13 @@ async def delete_product(product_id: uuid.UUID, user: User = Depends(current_use
     product = await db.get(Product, product_id)
     if not product:
         raise HTTPException(404, "Product not found")
-    await owned_shop(product.shop_id, user, db)
-    image_url = product.image_url
-    await db.delete(product)
+    shop = await owned_shop(product.shop_id, user, db)
+    if user.role != UserRole.ADMIN and (user.role != UserRole.SELLER or shop.owner_id != user.id):
+        raise HTTPException(403, "Only the owning seller or an admin can delete this product")
+    image_urls = await delete_products(db, [product.id])
     await db.commit()
-    delete_image(image_url)
+    for image_url in image_urls:
+        delete_image(image_url)
 
 
 @router.post("/products/{product_id}/image", response_model=ProductOut)

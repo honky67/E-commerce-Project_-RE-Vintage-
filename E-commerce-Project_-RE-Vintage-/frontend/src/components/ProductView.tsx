@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Category, Product, Vendor } from "../data/mockData";
 import PlaceholderArt from "./PlaceholderArt";
+import { addToCart } from "../lib/cart";
 
 const OPTIONS: Record<Category, { label: string; values: string[] }> = {
   apparel: { label: "Size", values: ["S", "M", "L", "XL"] },
@@ -27,11 +28,31 @@ export default function ProductView({ product, vendor }: { product: Product; ven
   const [option, setOption] = useState(opts.values[0]);
   const [tab, setTab] = useState<Tab>("Description");
   const [added, setAdded] = useState(false);
-  const soldOut = product.stockCount === 0;
+  const [feedback, setFeedback] = useState("");
+  const soldOut = product.stockCount <= 0;
 
   const add = () => {
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1600);
+    if (soldOut) return;
+    const res = addToCart(
+      {
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        image: product.image,
+        stockCount: product.stockCount,
+        option,
+        category: product.category,
+        vendorName: vendor.shopName,
+      },
+      1,
+    );
+    if (res.success) {
+      setAdded(true);
+      setFeedback("");
+      setTimeout(() => setAdded(false), 1600);
+    } else {
+      setFeedback(res.message);
+    }
   };
 
   return (
@@ -95,20 +116,35 @@ export default function ProductView({ product, vendor }: { product: Product; ven
             ))}
           </div>
 
-          <motion.button
-            type="button"
-            onClick={add}
-            disabled={soldOut}
-            whileHover={{ x: -2, y: -2 }}
-            whileTap={{ scale: 0.96 }}
-            animate={added ? { rotate: [0, -3, 3, 0] } : {}}
-            className={`mt-8 -skew-x-6 border-2 border-vinylBlack px-8 py-3 font-mono text-sm font-bold uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] disabled:opacity-40 ${
-              added ? "bg-red-600 text-parchment" : "bg-amberGlow"
-            }`}
-          >
-            {soldOut ? "Sold out" : added ? `Added: ${option} ✓` : "Add to crate"}
-          </motion.button>
-          <p className="mt-2 font-mono text-xs opacity-60">{product.stockCount} in stock</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <motion.button
+              type="button"
+              onClick={add}
+              disabled={soldOut}
+              whileHover={soldOut ? {} : { x: -2, y: -2 }}
+              whileTap={soldOut ? {} : { scale: 0.96 }}
+              animate={added ? { rotate: [0, -3, 3, 0] } : {}}
+              className={`mt-8 -skew-x-6 border-2 border-vinylBlack px-8 py-3 font-mono text-sm font-bold uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] disabled:cursor-not-allowed disabled:opacity-40 ${
+                soldOut ? "bg-vinylBlack/15 text-vinylBlack/40" : added ? "bg-red-600 text-parchment" : "bg-amberGlow hover:bg-vinylBlack hover:text-parchment"
+              }`}
+            >
+              {soldOut ? "Sold out" : added ? `Added: ${option} ✓` : "Add to crate"}
+            </motion.button>
+            <Link
+              href="/cart"
+              className="mt-8 inline-block -skew-x-6 border-2 border-vinylBlack bg-parchment px-6 py-3 font-mono text-sm font-bold uppercase text-vinylBlack shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-amberGlow"
+            >
+              View Crate →
+            </Link>
+          </div>
+          {feedback && (
+            <p className="mt-2 -skew-x-6 bg-red-600 px-3 py-1 font-mono text-xs font-bold text-parchment inline-block">
+              {feedback}
+            </p>
+          )}
+          <p className="mt-2 font-mono text-xs opacity-60">
+            {soldOut ? "Currently unavailable" : `${product.stockCount} in stock`}
+          </p>
 
           {/* tabs */}
           <div className="mt-10 flex gap-1 border-b-2 border-vinylBlack">

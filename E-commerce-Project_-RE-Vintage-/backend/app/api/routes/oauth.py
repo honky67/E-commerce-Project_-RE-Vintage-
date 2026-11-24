@@ -1,5 +1,6 @@
+import re
 import secrets
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -33,24 +34,83 @@ def _public_base(request: Request) -> str:
     return _frontend_base(request)
 
 
+def _is_allowed_frontend_origin(origin_url: str | None) -> bool:
+    if not origin_url:
+        return False
+    try:
+        parsed = urlparse(origin_url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            return False
+        origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        if origin in settings.cors_origins:
+            return True
+        if settings.APP_ENV != "development" or parsed.port != 3000:
+            return False
+        if settings.CORS_ORIGIN_REGEX and re.fullmatch(settings.CORS_ORIGIN_REGEX, origin):
+            return True
+    except ValueError:
+        return False
+    return False
+
+
+def _extract_origin(url_str: str | None) -> str | None:
+    if not url_str:
+        return None
+    try:
+        parsed = urlparse(url_str)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+    except Exception:
+        pass
+    return None
+
+
 def _frontend_base(request: Request) -> str:
-    """The Next.js frontend origin (port 3000).  Resolution order:
-    1. FRONTEND_URL env var (or APP_URL as fallback) — set this in .env for a fixed VM IP.
-    2. x-forwarded-host header written by Next.js when it proxies /api/* to FastAPI.
-    3. Same host as the request but on port 3000."""
-    if settings.FRONTEND_URL:
-        return settings.FRONTEND_URL.rstrip("/")
-    if settings.APP_URL:
-        return settings.APP_URL.rstrip("/")
-    # Next.js proxy writes x-forwarded-host with the *browser's* host (e.g. 192.168.x.x:3000)
+    """The Next.js frontend origin (port 3000). Resolution order:
+    1. Origin header if valid local/LAN origin.
+    2. Referer header if valid local/LAN origin (port 3000).
+    3. x-forwarded-host header written by Next.js when it proxies /api/* to FastAPI.
+    4. Direct request to :8000 — swap port to 3000 using request hostname.
+    5. Configured FRONTEND_URL or APP_URL (if not a localhost mismatch when client is on LAN).
+    6. Fallback: http://<hostname>:3000 or http://localhost:3000."""
+    # 1. Origin header
+    origin = _extract_origin(request.headers.get("origin"))
+    if origin and _is_allowed_frontend_origin(origin):
+        return origin
+
+    # 2. Referer header (e.g. user initiated from http://192.168.1.59:3000/login)
+    referer = _extract_origin(request.headers.get("referer"))
+    if referer and _is_allowed_frontend_origin(referer):
+        return referer
+
+    # 3. Next.js proxy writes x-forwarded-host with the *browser's* host (e.g. 192.168.x.x:3000)
     fwd_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
     if fwd_host:
         proto = (request.headers.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
-        return f"{proto}://{fwd_host}"
-    # Direct request to :8000 — swap port to 3000 so the redirect still hits the frontend
-    proto = request.url.scheme
-    hostname = request.url.hostname or "localhost"
-    return f"{proto}://{hostname}:3000"
+        fwd_origin = f"{proto}://{fwd_host}"
+        if _is_allowed_frontend_origin(fwd_origin):
+            return fwd_origin
+
+    # 4. Direct request to :8000 — swap port to 3000
+    req_host = request.url.hostname or "localhost"
+    if req_host not in ("localhost", "127.0.0.1"):
+        proto = request.url.scheme or "http"
+        lan_origin = f"{proto}://{req_host}:3000"
+        if _is_allowed_frontend_origin(lan_origin):
+            return lan_origin
+
+    # 5. Explicit FRONTEND_URL or APP_URL (used if request is not on a LAN host differing from localhost)
+    if settings.FRONTEND_URL:
+        configured = settings.FRONTEND_URL.rstrip("/")
+        if req_host in ("localhost", "127.0.0.1") or not ("localhost" in configured or "127.0.0.1" in configured):
+            return configured
+    if settings.APP_URL:
+        configured = settings.APP_URL.rstrip("/")
+        if req_host in ("localhost", "127.0.0.1") or not ("localhost" in configured or "127.0.0.1" in configured):
+            return configured
+
+    proto = request.url.scheme or "http"
+    return f"{proto}://{req_host}:3000"
 
 
 def _fail(request: Request, reason: str) -> RedirectResponse:

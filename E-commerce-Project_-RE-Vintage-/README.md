@@ -261,6 +261,106 @@ Verify your setup by visiting these URLs in your browser:
 
 ---
 
+## 📡 API Endpoints Reference
+
+RE:VINTAGE provides an asynchronous REST API built on FastAPI and Pydantic v2. Application routes are mounted under `/api`; the health checks are also available at the root paths shown below.
+
+### Internal REST Endpoints
+
+| Method | Path | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/health` | No | Server liveness probe (`{"status": "ok"}`) |
+| `GET` | `/api/health` | No | API liveness probe (`{"status": "ok"}`) |
+| `GET` | `/health/db` | No | PostgreSQL database connectivity probe (`{"db": "ok"}`) |
+| `POST` | `/api/auth/register` | No | Register a new customer (`buyer`) account and issue JWT |
+| `POST` | `/api/auth/login` | No | Authenticate user credentials and return JWT bearer token |
+| `GET` | `/api/auth/me` | Bearer JWT | Fetch current authenticated user profile and role |
+| `GET` | `/api/auth/oauth/providers` | No | Check availability of social login providers (`live`, `demo`, `off`) |
+| `GET` | `/api/auth/oauth/{provider}/start` | No | Initiate OAuth 2.0 flow or development demo login redirect |
+| `GET` | `/api/auth/oauth/{provider}/callback` | No | OAuth code exchange, profile sync, and JWT token issuance |
+| `GET` | `/api/products` | No | Query catalog with media type filter, shop filter, and pagination |
+| `GET` | `/api/products/{product_id}` | No | Retrieve product details and shop information by UUID |
+| `POST` | `/api/products` | Bearer JWT (Seller/Admin) | Create a product using multipart form data, with an optional image |
+| `DELETE` | `/api/products/{product_id}` | Bearer JWT (Owner/Admin) | Delete a product and unlink its stored image |
+| `POST` | `/api/products/{product_id}/image` | Bearer JWT (Owner/Admin) | Upload or replace a product image |
+| `GET` | `/api/shops` | No | List shops with catalog item counts |
+| `GET` | `/api/shops/mine` | Bearer JWT | List shops owned by current user |
+| `GET` | `/api/shops/{slug}` | No | Retrieve a shop profile and catalog item count |
+| `POST` | `/api/shops` | Bearer JWT | Register a new shop (promotes buyer to seller) |
+| `GET` | `/api/shops/{shop_id}/products` | No | List products belonging to a shop |
+| `POST` | `/api/shops/{shop_id}/products` | Bearer JWT (Owner/Admin) | Add a product to a shop |
+| `POST` | `/api/orders/checkout` | Bearer JWT | Validate stock, decrement inventory, persist order & order items |
+| `GET` | `/api/orders/mine` | Bearer JWT | Fetch order history for the authenticated user |
+| `GET` | `/api/orders/{order_id}` | Bearer JWT (Buyer/Admin) | Retrieve order details and purchased line items |
+| `GET` | `/api/admin/users` | Bearer JWT (Admin) | List all platform users with role assignments |
+| `GET` | `/api/admin/shops` | Bearer JWT (Admin) | List all platform shops for verification review |
+| `PATCH` | `/api/admin/shops/{shop_id}/badge` | Bearer JWT (Admin) | Update a shop's Vinyl Badge status |
+| `DELETE` | `/api/admin/shops/{shop_id}` | Bearer JWT (Admin) | Delete a shop and its associated products |
+
+### Google OAuth 2.0 External API Integration
+
+When Google credentials are configured, the backend redirects users to Google's OAuth 2.0 authorization service, exchanges the callback code for tokens, and retrieves profile information through OpenID Connect. It then finds or provisions the local account and issues a RE:VINTAGE JWT. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `backend/.env`; in development, the built-in demo flow is available when credentials are unset.
+
+### Interactive Swagger UI & OpenAPI Specification
+
+FastAPI generates interactive OpenAPI documentation in Swagger UI at [`http://localhost:8000/docs`](http://localhost:8000/docs). Use it to inspect and try the endpoints; authenticated operations accept a bearer JWT through the **Authorize** button.
+
+---
+
+## 🧪 VM & Localhost Verification Checklist (IPT & PlatTech Evaluation)
+
+Follow these step-by-step commands to verify the system from a clean state during rubric assessment:
+
+### Step 1: Verify PostgreSQL Service Status
+Ensure the PostgreSQL daemon is active and listening on port `5432`:
+```bash
+sudo systemctl status postgresql --no-pager
+# Confirm the server accepts connections:
+pg_isready -h localhost -p 5432
+# Confirm the application database and role are available:
+psql -U vinyl -d vinyl_db -h localhost -c "SELECT current_database(), current_user;"
+```
+*(If database credentials or database need initial creation, run `bash scripts/setup_db.sh`).*
+
+### Step 2: Launch the Application
+From the repository root, run the launcher and leave it running:
+```bash
+bash start.sh
+```
+Open a second terminal for the checks below. The launcher prints the site and API-docs URLs when the backend starts.
+
+### Step 3: Confirm the Localhost Services Respond
+From the second terminal, check the storefront, FastAPI health endpoint, database health endpoint, and Swagger UI:
+```bash
+curl -fsS -o /dev/null -w "Frontend: HTTP %{http_code}\n" http://localhost:3000
+curl -fsS -o /dev/null -w "API health: HTTP %{http_code}\n" http://localhost:8000/health
+curl -fsS http://localhost:8000/health/db
+curl -fsS -o /dev/null -w "\nSwagger UI: HTTP %{http_code}\n" http://localhost:8000/docs
+```
+The expected responses are HTTP `200` for the storefront, health check, and Swagger UI, and `{"db":"ok"}` for the database check. Open `http://localhost:3000` and `http://localhost:8000/docs` in a browser to confirm both pages load. FastAPI does not define a page at `http://localhost:8000/`; use `/docs` for the interactive UI and `/health` to verify the API.
+
+### Step 4: Check the Backend Log for Tracebacks
+`start.sh` writes backend output to `logs/backend.log`. Check that it contains no Python tracebacks:
+```bash
+if grep -n "Traceback (most recent call last)" logs/backend.log; then
+  echo "Traceback found; investigate the log before evaluation."
+else
+  echo "No traceback found in logs/backend.log."
+fi
+```
+Also confirm the log contains `Application startup complete`:
+```bash
+grep -n "Application startup complete" logs/backend.log
+```
+
+### Step 5: Test Core E-Commerce Flows
+1. **Catalog Browsing:** Visit `http://localhost:3000` and inspect products.
+2. **Crate & Quick Add:** Click **"Quick add"** on an in-stock album or visit a product detail page to add items. Verify the header **Crate [1]** badge updates immediately.
+3. **Out-of-Stock Protection:** Notice sold-out items display **"Sold out"** and disable adding. Direct attempts to check out an empty or out-of-stock cart are blocked with clear feedback.
+4. **Checkout & Stock Decrement:** Log in with `customer@revintage.demo` (`Demo1234!`), visit `/cart`, proceed to `/checkout`, and confirm the order. Notice product stock is decremented in PostgreSQL and the order immediately displays under **Account → Orders** ([`/orders`](http://localhost:3000/orders)).
+
+---
+
 ## 🛠 Troubleshooting
 
 | Problem | Root Cause | Solution |

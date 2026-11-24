@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AccountMenu from "./AccountMenu";
+import { useCart } from "../lib/cart";
 
 // Drop your image in frontend/public/images/ and set its path here, e.g. "/images/nav-bg.jpg"
 const NAV_BG_IMAGE = "";
@@ -20,6 +21,7 @@ const SHEEN =
 
 export default function SiteHeader() {
   const path = usePathname();
+  const { itemCount } = useCart();
   return (
     <header className="relative z-40 border-b-2 border-vinylBlack bg-vinylBlack">
       {/* decorative layers are clipped here so the account dropdown can overflow the header */}
@@ -70,6 +72,25 @@ export default function SiteHeader() {
               </Link>
             );
           })}
+          <Link
+            href="/cart"
+            prefetch
+            aria-label={`View crate (${itemCount} items)`}
+            className={`hover-tilt-2 inline-flex items-center gap-1.5 px-2 py-1 font-mono text-xs uppercase tracking-widest transition-colors sm:px-3 sm:text-sm ${
+              path.startsWith("/cart")
+                ? "bg-red-600 text-parchment"
+                : "border border-parchment/40 text-parchment hover:bg-amberGlow hover:text-vinylBlack"
+            }`}
+          >
+            <span>Crate</span>
+            <span
+              className={`inline-flex h-4 min-w-[1rem] items-center justify-center px-1 text-[10px] font-bold ${
+                itemCount > 0 ? "bg-amberGlow text-vinylBlack" : "bg-parchment/20 text-parchment"
+              }`}
+            >
+              {itemCount}
+            </span>
+          </Link>
           <span className="ml-2">
             <AccountMenu />
           </span>

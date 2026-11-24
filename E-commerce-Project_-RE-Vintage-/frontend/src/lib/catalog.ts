@@ -8,7 +8,7 @@ interface ApiShop { id: string; shop_name: string; slug: string; bio: string | n
 const SERVER_API = (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
 const TONES = ["bg-vinylBlack", "bg-red-600", "bg-pine", "bg-amberGlow"];
-const tone = (seed: string) => TONES[[...seed].reduce((n, c) => n + c.charCodeAt(0), 0) % TONES.length];
+const tone = (seed: string) => TONES[Array.from(seed).reduce((n, c) => n + c.charCodeAt(0), 0) % TONES.length];
 const CATEGORY: Record<string, Category> = { vinyl: "vinyl", apparel: "apparel", turntable: "turntables" };
 
 // Server-side fetch (pages are dynamic, so new products appear immediately). Returns null if the API is down.

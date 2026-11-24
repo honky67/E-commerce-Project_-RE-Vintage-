@@ -40,6 +40,8 @@ export default function AccountMenu() {
   }
 
   const links = [
+    { label: "Orders", href: "/orders" },
+    { label: "My crate", href: "/cart" },
     { label: "My store", href: "/dashboard/store" },
     { label: "Products", href: "/dashboard/products" },
     { label: "Add product", href: "/seller/products/new" },

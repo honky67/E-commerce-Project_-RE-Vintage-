@@ -43,7 +43,10 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"  # set to "production" to disable demo accounts
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"  # comma-separated
     # Development only: also allow localhost and private-network IPs (VM host-only / bridged adapters).
-    CORS_ORIGIN_REGEX: str = r"https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?"
+    CORS_ORIGIN_REGEX: str = (
+        r"^https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|"
+        r"172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|[a-zA-Z0-9.-]+\.local):3000$"
+    )
     APP_URL: str | None = None  # public site URL for OAuth redirects, e.g. http://192.168.56.10:3000 (auto-detected if empty)
     FRONTEND_URL: str | None = None  # Next.js origin; defaults to APP_URL, then auto-detected on port 3000
     UPLOAD_DIR: str | None = None  # defaults to backend/uploads
@@ -76,7 +79,12 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        origins = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        if self.FRONTEND_URL and self.FRONTEND_URL.strip():
+            origins.append(self.FRONTEND_URL.strip().rstrip("/"))
+        if self.APP_URL and self.APP_URL.strip():
+            origins.append(self.APP_URL.strip().rstrip("/"))
+        return list(dict.fromkeys(origins))
 
     @field_validator("DATABASE_URL")
     @classmethod

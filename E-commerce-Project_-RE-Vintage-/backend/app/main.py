@@ -28,6 +28,21 @@ async def lifespan(_: FastAPI):
             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS specs TEXT"))
             await conn.execute(text("ALTER TABLE shops ADD COLUMN IF NOT EXISTS location VARCHAR(200)"))
             await conn.execute(text("ALTER TABLE shops ADD COLUMN IF NOT EXISTS rating FLOAT"))
+            await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS full_name VARCHAR(200)"))
+            await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS address VARCHAR(500)"))
+            await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS city VARCHAR(200)"))
+            await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(50)"))
+            await conn.execute(
+                text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) NOT NULL DEFAULT 'COD'")
+            )
+            await conn.execute(text("ALTER TABLE order_items ALTER COLUMN title TYPE VARCHAR(255)"))
+            # Normalize any legacy hardcoded image URLs in existing database records
+            await conn.execute(
+                text(
+                    "UPDATE products SET image_url = SUBSTRING(image_url FROM '/uploads/.*') "
+                    "WHERE image_url LIKE '%/uploads/%' AND image_url NOT LIKE '/uploads/%'"
+                )
+            )
     except Exception as exc:
         log.error("Cannot reach the database (%s). Run scripts/setup_db.sh and check backend/.env", type(exc).__name__)
         raise

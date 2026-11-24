@@ -5,16 +5,37 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { Product } from "../data/mockData";
 import PlaceholderArt from "./PlaceholderArt";
+import { addToCart } from "../lib/cart";
 
 export default function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
   const vendor = product.vendorName ? { id: product.vendorId, shopName: product.vendorName } : undefined;
-  const soldOut = product.stockCount === 0;
+  const soldOut = product.stockCount <= 0;
 
-  const quickAdd = () => {
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1400);
+  const quickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (soldOut) return;
+    const defaultOption =
+      product.category === "apparel" ? "M" : product.category === "turntables" ? "33⅓" : "VG+";
+    const res = addToCart(
+      {
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        image: product.image,
+        stockCount: product.stockCount,
+        option: defaultOption,
+        category: product.category,
+        vendorName: product.vendorName,
+      },
+      1,
+    );
+    if (res.success) {
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1400);
+    }
   };
 
   return (
@@ -65,13 +86,17 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
           type="button"
           onClick={quickAdd}
           disabled={soldOut}
-          whileTap={{ scale: 0.9 }}
+          whileTap={soldOut ? {} : { scale: 0.9 }}
           animate={added ? { scale: [1, 1.2, 1], rotate: [0, -4, 0] } : {}}
-          className={`-skew-x-6 border-2 border-vinylBlack px-3 py-1 font-mono text-xs font-bold uppercase disabled:opacity-40 ${
-            added ? "bg-red-600 text-parchment" : "bg-amberGlow text-vinylBlack hover:bg-vinylBlack hover:text-parchment"
+          className={`-skew-x-6 border-2 border-vinylBlack px-3 py-1 font-mono text-xs font-bold uppercase disabled:cursor-not-allowed disabled:opacity-40 ${
+            soldOut
+              ? "bg-vinylBlack/10 text-vinylBlack/40"
+              : added
+                ? "bg-red-600 text-parchment"
+                : "bg-amberGlow text-vinylBlack hover:bg-vinylBlack hover:text-parchment"
           }`}
         >
-          {added ? "Added ✓" : "Quick add"}
+          {soldOut ? "Sold out" : added ? "Added ✓" : "Quick add"}
         </motion.button>
       </div>
     </motion.article>
